@@ -4,10 +4,12 @@ const closeBtn = document.getElementById('close-btn');
 const sendBtn = document.getElementById('send-btn');
 const chatInput = document.getElementById('chat-input');
 const chatBody = document.getElementById('chat-body');
+const refreshBtn = document.getElementById('refresh-btn');
 
-// Open chatbot
-chatbotBtn.addEventListener('click', () => {
-  chatPopup.style.display = 'block';
+// Prevent scroll to top on button click
+chatbotBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  chatPopup.style.display = 'flex';
 });
 
 // Close chatbot
@@ -15,13 +17,16 @@ closeBtn.addEventListener('click', () => {
   chatPopup.style.display = 'none';
 });
 
+// Refresh chat
+refreshBtn.addEventListener('click', () => {
+  chatBody.innerHTML = '<div class="bot-message">Hi! How can I help you today?</div>';
+});
+
 // Send message
 sendBtn.addEventListener('click', sendMessage);
-
-// Allow "Enter" key to send message
 chatInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
-    e.preventDefault(); // Prevent form submit if wrapped in a form
+    e.preventDefault();
     sendMessage();
   }
 });
@@ -31,19 +36,21 @@ function sendMessage() {
   if (userMessage !== '') {
     displayMessage(userMessage, 'user-message');
 
-    // Send message to backend (relative path for same port)
+    const typingBubble = document.createElement('div');
+    typingBubble.classList.add('bot-message');
+    typingBubble.id = 'typing-indicator';
+    typingBubble.innerHTML = '<em>Typing<span class="dots"></span></em>';
+    chatBody.appendChild(typingBubble);
+    chatBody.scrollTop = chatBody.scrollHeight;
+
     fetch('http://127.0.0.1:50001/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: userMessage })
     })
     .then(response => response.json())
     .then(data => {
-      // Log the backend response to inspect the data structure
-      console.log("Backend response:", data);
-
+      document.getElementById('typing-indicator')?.remove();
       if (data && data.response) {
         displayBotResponse(data.response);
       } else {
@@ -51,6 +58,7 @@ function sendMessage() {
       }
     })
     .catch(error => {
+      document.getElementById('typing-indicator')?.remove();
       console.error('Error:', error);
       displayMessage("Sorry, I couldn't process your request.", 'bot-message', true);
     });
@@ -63,13 +71,7 @@ function sendMessage() {
 function displayMessage(message, type, isBot = false) {
   const messageElement = document.createElement('div');
   messageElement.classList.add(type);
-
-  if (isBot) {
-    messageElement.innerHTML = message;
-  } else {
-    messageElement.innerText = message;
-  }
-
+  messageElement.innerHTML = isBot ? message : escapeHtml(message);
   chatBody.appendChild(messageElement);
   chatBody.scrollTop = chatBody.scrollHeight;
 }
@@ -77,6 +79,13 @@ function displayMessage(message, type, isBot = false) {
 function displayBotResponse(response) {
   if (response) {
     const points = response.split('\n');
+
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('bot-message-wrapper');
+
+    const avatar = document.createElement('div');
+    avatar.classList.add('bot-avatar');
+
     const botResponseContainer = document.createElement('div');
     botResponseContainer.classList.add('bot-message');
 
@@ -84,14 +93,23 @@ function displayBotResponse(response) {
       if (point.trim() !== '') {
         const pointElement = document.createElement('div');
         const formattedText = point.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        pointElement.innerHTML = `• ${formattedText}`;
+        pointElement.innerHTML = '– ' + formattedText;
         botResponseContainer.appendChild(pointElement);
       }
     });
 
-    chatBody.appendChild(botResponseContainer);
+    wrapper.appendChild(avatar);
+    wrapper.appendChild(botResponseContainer);
+    chatBody.appendChild(wrapper);
     chatBody.scrollTop = chatBody.scrollHeight;
   } else {
     displayMessage("Sorry, I couldn't get a valid response.", 'bot-message', true);
   }
+}
+
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.innerText = text;
+  return div.innerHTML;
 }
