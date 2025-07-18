@@ -2,39 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Crescent College Chatbot</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <script defer src="{{ url_for('static', filename='script.js') }}"></script>
 </head>
 <body>
 
-  <!-- Chatbot Button -->
-  <button class="chatbot-button" id="chatbot-btn" aria-label="Open chatbot">
-    💬
-  </button>
-  
-  <!-- Chat Popup Window -->
-  <div class="chat-popup" id="chat-popup" role="dialog" aria-labelledby="chat-header" aria-hidden="true">
-    <div class="chat-header" id="chat-header">
-      <span>Crescent College Chatbot</span>
-      <button class="close-btn" id="close-btn" aria-label="Close chatbot">x</button>
+  <button class="chatbot-button" id="chatbot-btn" aria-label="Open chatbot">💬</button>
+
+  <div class="chat-popup" id="chat-popup">
+    <div class="chat-header">
+      <h3>CrescentBot</h3>
+      <div class="chat-controls">
+        <button id="refresh-btn" title="Refresh">🔄</button>
+        <button id="close-btn" title="Close">✖</button>
+      </div>
     </div>
-  
-    <div class="chat-body" id="chat-body" aria-live="polite">
+    <div class="chat-body" id="chat-body">
       <div class="bot-message">Hi! How can I help you today?</div>
     </div>
-  
     <div class="chat-footer">
-      <input
-        type="text"
-        id="chat-input"
-        placeholder="Type a message..."
-        aria-label="Chat input"
-        autocomplete="off"
-        required
-      />
-      <button id="send-btn" aria-label="Send message">Send</button>
+      <input type="text" id="chat-input" placeholder="Type your message..." autocomplete="off" />
+      <button id="send-btn">Send</button>
     </div>
   </div>
 
