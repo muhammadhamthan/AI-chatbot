@@ -1,37 +1,15 @@
-from huggingface_hub import hf_hub_download as cached_download
-
-import huggingface_hub
-
-# Monkey patch to replace cached_download with hf_hub_download
-huggingface_hub.cached_download = huggingface_hub.hf_hub_download
-
-from sentence_transformers import SentenceTransformer #which need the cached_doenload file 
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-from langchain_community.document_loaders.csv_loader import CSVLoader
-
-from InstructorEmbedding import INSTRUCTOR
-
-from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-from langchain_community.vectorstores import FAISS
-
-from langchain_core.prompts import PromptTemplate
-
-from langchain.chains import RetrievalQA
-
-from langchain.memory import ConversationSummaryBufferMemory
-from langchain.chains import ConversationalRetrievalChain
-from langchain.chains import LLMChain
-
-
-import re
-
-
-
-import os
-
+# Imports ✅
 from dotenv import load_dotenv
+import os, re
 load_dotenv()
+
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.document_loaders import CSVLoader
+from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationSummaryBufferMemory
 
 
 api_key = os.environ['GOOGLE_API_KEY']
@@ -40,11 +18,9 @@ api_key = os.environ['GOOGLE_API_KEY']
 model = ChatGoogleGenerativeAI(model = 'gemini-2.0-flash',google_api_key=api_key)
 
 
-vector_file_path = "crescent_data"
+vector_file_path = "final_tuned_data"
 
-instructor_embedding = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large")
-
-
+instructor_embedding = HuggingFaceEmbeddings(model_name="hkunlp/instructor-large")
 
 
 def convert_links(text):
@@ -83,8 +59,7 @@ def get_qa_chain():
     vectordb = FAISS.load_local("crescent_data_mistake",embeddings =instructor_embedding,allow_dangerous_deserialization=True)
     retriever = vectordb.as_retriever()
     rdocs = retriever.invoke("do you have machine learning course")
-    print(rdocs)#get_relavent() is a old method instead we used invoke
-    rdocs
+    print("i am printing this in the get/_qa_chain",rdocs)#get_relavent() is a old method instead we used invoke
     # the answer will be produce based on the prompt we given the below
     prompt_template ="""Task
                             Primary Function: You are CrescentBot, a warm, knowledgeable, and enthusiastic Admissions Officer dedicated to assisting parents and students with inquiries about Crescent College Chennai by providing accurate, engaging, clear, concise, and highly structured information and action-oriented information about:
@@ -413,7 +388,3 @@ if __name__ == '__main__':
     chain,memory = get_qa_chain()
     
     print(chain.invoke({"question": "Do you provide internship? Do you have EMI option"}))
-
-
-
-
