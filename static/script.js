@@ -6,21 +6,35 @@ const chatInput = document.getElementById('chat-input');
 const chatBody = document.getElementById('chat-body');
 const refreshBtn = document.getElementById('refresh-btn');
 
+// Hide chatbot button if chat popup is visible on load
+if (chatPopup.style.display !== 'flex') {
+  chatbotBtn.style.display = 'none';
+}
+
 // Prevent scroll to top on button click
+// Open chatbot and hide open button
 chatbotBtn.addEventListener('click', (e) => {
   e.preventDefault();
   chatPopup.style.display = 'flex';
+  chatbotBtn.style.display = 'none';
 });
 
-// Close chatbot
+// Close chatbot and show open button
 closeBtn.addEventListener('click', () => {
   chatPopup.style.display = 'none';
+  chatbotBtn.style.display = 'flex';
 });
+
 
 // Refresh chat
 refreshBtn.addEventListener('click', () => {
-  chatBody.innerHTML = '<div class="bot-message">Hi! How can I help you today?</div>';
+  chatBody.innerHTML =
+    '<div class="bot-message-wrapper">' +
+      '<div class="bot-avatar"></div>' +
+      '<div class="bot-message">Hi! How can I help you today?</div>' +
+    '</div>';
 });
+
 
 // Send message
 sendBtn.addEventListener('click', sendMessage);
@@ -93,7 +107,7 @@ function displayBotResponse(response) {
       if (point.trim() !== '') {
         const pointElement = document.createElement('div');
         const formattedText = point.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        pointElement.innerHTML = '– ' + formattedText;
+        pointElement.innerHTML = '<span class="point">– </span>' + formattedText;
         botResponseContainer.appendChild(pointElement);
       }
     });
