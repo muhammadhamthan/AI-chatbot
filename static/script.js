@@ -33,6 +33,17 @@ refreshBtn.addEventListener('click', () => {
       '<div class="bot-avatar"></div>' +
       '<div class="bot-message">Hi! How can I help you today?</div>' +
     '</div>';
+    
+    fetch('http://127.0.0.1:50001/refresh', { method: 'POST' })
+    .then(response => response.json())  // 3) Parse JSON response
+    .then(data => {
+      // 4) Log the server’s reply to the console
+      console.log("Memory refresh:", data);
+    })
+    .catch(error => 
+      // 5) If the request fails (server down/network), log the error
+      console.error("Error refreshing memory:", error)
+    );
 });
 
 
@@ -120,8 +131,6 @@ function displayBotResponse(response) {
     displayMessage("Sorry, I couldn't get a valid response.", 'bot-message', true);
   }
 }
-
-
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.innerText = text;

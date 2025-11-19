@@ -13,14 +13,14 @@ from langchain.memory import ConversationSummaryBufferMemory
 
 
 api_key = os.environ['GOOGLE_API_KEY']
-
 #load model
 model = ChatGoogleGenerativeAI(model = 'gemini-2.0-flash',google_api_key=api_key)
 
 
-vector_file_path = "final_tuned_data"
+vector_file_path = "Mini-L6"
 
-instructor_embedding = HuggingFaceEmbeddings(model_name="hkunlp/instructor-large")
+instructor_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
 
 
 def convert_links(text):
@@ -55,14 +55,11 @@ def create_vertor_db():
     #To save the vectordb in out local
     vectordb.save_local("crescent_data")
     
-def get_qa_chain():
-    vectordb = FAISS.load_local("crescent_data_mistake",embeddings =instructor_embedding,allow_dangerous_deserialization=True)
-    retriever = vectordb.as_retriever()
-    rdocs = retriever.invoke("do you have machine learning course")
-    print("i am printing this in the get/_qa_chain",rdocs)#get_relavent() is a old method instead we used invoke
-    # the answer will be produce based on the prompt we given the below
+def get_qa_chain(retriver,memory):
+    # vectordb = FAISS.load_local("Mini-L6",embeddings =instructor_embedding,allow_dangerous_deserialization=True)
+    # retriever = vectordb.as_retriever()
     prompt_template ="""Task
-                            Primary Function: You are CrescentBot, a warm, knowledgeable, and enthusiastic Admissions Officer dedicated to assisting parents and students with inquiries about Crescent College Chennai by providing accurate, engaging, clear, concise, and highly structured information and action-oriented information about:
+                            Primary Function: You must one and only use english language,You are CrescentBot, a warm, knowledgeable, and enthusiastic Admissions Officer dedicated to assisting parents and students with inquiries about Crescent College Chennai by providing accurate, engaging, clear, concise, and highly structured information and action-oriented information about:
 
                             Admission processes
 
@@ -75,8 +72,6 @@ def get_qa_chain():
                             Campus facilities
 
                             Placements and career support
-    
-
 
                             You use the principles of persuasive communication (inspired by experts like Robert Cialdini) to make responses engaging, informative, and action-oriented and guide users toward taking actionable steps, such as applying for admission, exploring the website, or contacting the Admissions Office. Ensure responses are point-to-point, easy to scan, and contain only essential data.
     
@@ -130,19 +125,23 @@ def get_qa_chain():
                                everything above i gave for an example , Not for static approch. 
                                
                                Use links **dynamically and intelligently** based on the user's query. Never follow a static or hardcoded approach. All examples in this prompt are **for illustration only**—you must determine the most relevant link using context, user intent, and keyword cues.
-                               
-                               
                              If the user's next question is related to the previous one, connect the meaning of the questions and provide a seamless response. Focus on the meaning of the words or sentences, not the exact wording and more importantly Based on the previous conversation, provide an answer that continues from the last user question.
                             
                             Memory Handling:
-                                   Store the previous question and answer in memory. When a user asks a follow-up question, ensure the response is connected and continues the conversation logically based on the previous exchange. If needed, use the prior context to refine the answer.
+                                   Always use the conversation history provided by the backend to understand the current query. Treat this history as the active memory of the conversation.
+
+                                    When a user asks a follow-up question, abbreviation, or uses a reference, interpret it based on prior turns in the conversation.
+
+                                    Example: If the user first asks “Tell me about B.Tech in Information Technology” and later asks “What is the fee for IT?”, you must correctly infer that “IT” = Information Technology.
+
+                                    If the history contains relevant details, carry them forward consistently in your answers to maintain coherence and continuity.
+
+                                    If the history does not provide any useful context, respond to the query independently and do not invent or assume connections that were not stated.
+
+                                    Ensure that your answers remain coherent, consistent, and context-aware throughout the entire active session.
                                 
                             Memory Handling for Seamless Flow:
-
                                 Continuity in Conversation: Build responses by recalling the user's previous interactions. For example, if the user asked about hostel fees and then inquires about room types, CrescentBot should provide specific details about room options without repeating basic fee information.      
-
-                                
-
                         context
                             You are an AI-powered Admissions Officer (CrescentBot) representing Crescent College Chennai. Your responses should reflect the college's values, mission, and commitment to student success. You are expected to handle a wide range of queries while maintaining professionalism, warmth, and clarity.
                             
@@ -361,9 +360,35 @@ def get_qa_chain():
     input_variables = ['context','question','chat_history']
     )
 
+
     #chain_type_kwargs = {'prompt':PROMPT} # here Since "prompt" is an expected keyword argument, it works.
     
-    memory = ConversationSummaryBufferMemory(
+    # memory = ConversationSummaryBufferMemory(
+    # memory_key="chat_history",   # <--- this line is KEY
+    # input_key="question",           # <--- your current user input
+    # output_key="answer",         # <--- model's answer
+    # return_messages=True,
+    # llm=model,
+    # max_token_limit=1000,
+    # document = True
+    # )
+    
+    chain = ConversationalRetrievalChain.from_llm(
+        llm=model,
+        retriever=retriver,
+        memory=memory,
+        combine_docs_chain_kwargs={"prompt": PROMPT}   # Give the prompt here
+    )
+    return chain,memory
+
+
+
+def get_retriver():
+    vectordb = FAISS.load_local("Mini-L6",embeddings =instructor_embedding,allow_dangerous_deserialization=True)
+    retriver = vectordb.as_retriever()
+    return retriver
+def new_memory():
+    store_memory = ConversationSummaryBufferMemory(
     memory_key="chat_history",   # <--- this line is KEY
     input_key="question",           # <--- your current user input
     output_key="answer",         # <--- model's answer
@@ -372,19 +397,13 @@ def get_qa_chain():
     max_token_limit=1000,
     document = True
     )
-    
-    chain = ConversationalRetrievalChain.from_llm(
-        llm=model,
-        retriever=retriever,
-        memory=memory,
-        combine_docs_chain_kwargs={"prompt": PROMPT}   # Give the prompt here
-    )
-    return chain,memory
+    return store_memory
+
+
+
 
 if __name__ == '__main__':
     if not os.path.exists("crescent_data"):
         create_vertor_db()
     
     chain,memory = get_qa_chain()
-    
-    print(chain.invoke({"question": "Do you provide internship? Do you have EMI option"}))

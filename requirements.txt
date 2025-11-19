@@ -130,8 +130,14 @@ langchain-google-genai>=2,<3
 langchain-google-vertexai>=2,<3
 langchain-huggingface>=0.1,<0.2
 
+torch==2.8.0
 sentence-transformers==5.0.0
 huggingface-hub==0.33.4
 
+
 Flask==3.1.1
 flask-cors==6.0.1
+#torch==2.8.0+cpu
+
+gunicorn
+faiss-cpu
