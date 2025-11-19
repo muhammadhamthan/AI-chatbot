@@ -1,0 +1,7 @@
+env/
+.env
+pycache/
+*.pyc
+.dockerignore
+all-MiniLM-L6-v2/
+Link Presentation Guidelines PROMPT.txt
